@@ -1,0 +1,53 @@
+import os
+
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from tqdm import tqdm
+
+"""10-armed bandit problem with non-stationary means."""
+
+# problem params
+num_experiments = 10
+num_timesteps = 200000
+k = 10
+eps = 0.1
+alpha = 0.1
+
+average_reward = np.zeros(num_timesteps+1)
+for exp in tqdm(range(num_experiments), total=num_experiments):
+    action_values = np.full(shape=k, fill_value=np.random.normal(size=1))
+    action_value_estimates = np.zeros(k)
+    num_steps_per_action = np.zeros(k)
+
+    prob = np.random.random(num_timesteps+1)
+    curr_reward = 0
+    curr_timestep = 1
+    while curr_timestep <= num_timesteps:
+        # pick an action
+        if prob[curr_timestep] <= (1-eps):
+            a = np.argmax(action_value_estimates)
+        else:
+            a = np.random.randint(k)
+
+        # num_steps_per_action[a] += 1
+        # sample reward
+        r = action_values[a] + 1*np.random.randn()
+
+        # update selected actions value's estimate
+        action_value_estimates[a] = action_value_estimates[a] + alpha*(r-action_value_estimates[a])
+
+        # update average reward
+        curr_reward = curr_reward + (1/curr_timestep)*(r-curr_reward)
+        average_reward[curr_timestep] += curr_reward
+
+        # update action values randomly
+        action_values += np.random.normal(scale=0.01, size=(k,))
+
+        curr_timestep += 1
+
+average_reward = average_reward/num_experiments
+# print("Average rewards: {}".format(average_reward))
+fig, ax = plt.subplots(1, 1, figsize=(10,10))
+sns.lineplot(data=average_reward)
+plt.show()
